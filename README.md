@@ -11,7 +11,7 @@ Docker · GitHub Actions CI/CD · Kubernetes (k3s) · Prometheus · Grafana · A
 ## Architecture
 
 ```text
-┌─────────────────┐     HTTP/REST      ┌──────────────────┐
+┌─────────────────┐     HTTP/REST       ┌──────────────────┐
 │   api-gateway   │ ──── task req ────▶ │     worker       │
 │                 │                     │                  │
 │  - REST API     │ ◀─── status ─────── │  - task runner   │
