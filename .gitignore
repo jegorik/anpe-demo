@@ -1,14 +1,14 @@
-#OS
+# OS
 .DS_Store
 Thumbs.db
 
-#Editors
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 
-#Env and secrets
+# Env and secrets
 .env
 .env.*
 !.env.example
@@ -16,13 +16,13 @@ Thumbs.db
 *.key
 *.crt
 
-#Python
-pycache/
+# Python
+__pycache__/
 *.pyc
 .venv/
 venv/
 
-#Java
+# Java
 *.class
 *.jar
 *.war
@@ -30,10 +30,10 @@ target/
 .gradle/
 build/
 
-#Docker
+# Docker
 *.log
 docker-data/
 tmp/
 
-#Kubernetes
+# Kubernetes
 *.kubeconfig
