@@ -12,7 +12,7 @@ RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 WORKDIR /app
 
 COPY --from=builder /install /usr/local
-COPY main.py .
+COPY --chown=appuser:appgroup main.py .
 
 USER appuser
 

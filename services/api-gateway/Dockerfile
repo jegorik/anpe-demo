@@ -16,7 +16,7 @@ WORKDIR /app
 
 # Copy only installed packages from builder
 COPY --from=builder /install /usr/local
-COPY main.py .
+COPY --chown=appuser:appgroup main.py .
 
 USER appuser
 
