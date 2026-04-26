@@ -1,3 +1,5 @@
+import signal
+import sys
 from prometheus_client import Counter, start_http_server
 import time
 
@@ -11,5 +13,11 @@ def run():
         print("Processing task...")
         time.sleep(5)
 
+def handle_shutdown(signum, frame):
+    print("Worker shutting down gracefully...")
+    sys.exit(0)
+
 if __name__ == "__main__":
     run()
+    signal.signal(signal.SIGTERM, handle_shutdown)
+    signal.signal(signal.SIGINT, handle_shutdown)
