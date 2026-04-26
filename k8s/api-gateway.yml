@@ -13,9 +13,19 @@ spec:
       labels:
         app: api-gateway
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: api-gateway
           image: ghcr.io/jegorik/anpe-api-gateway:latest
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           ports:
             - containerPort: 8080
           resources:

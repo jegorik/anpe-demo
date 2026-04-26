@@ -13,11 +13,19 @@ spec:
       labels:
         app: worker
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
         - name: worker
           image: ghcr.io/jegorik/anpe-worker:latest
           ports:
             - containerPort: 9090
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 50m
