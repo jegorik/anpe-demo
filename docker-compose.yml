@@ -3,7 +3,7 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile
-    image: ghcr.io/jegorik/anpe-api-gateway:latest
+    image: anpe-api-gateway:local
     container_name: anpe-api-gateway
     ports:
       - "8080:8080"
@@ -21,7 +21,7 @@ services:
     build:
       context: ./services/worker
       dockerfile: Dockerfile
-    image: ghcr.io/jegorik/anpe-worker:latest
+    image: anpe-worker:local
     container_name: anpe-worker
     ports:
       - "9090:9090"

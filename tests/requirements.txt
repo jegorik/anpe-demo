@@ -1,0 +1,4 @@
+# Integration and infrastructure test dependencies.
+# Install: pip install -r tests/requirements.txt
+httpx==0.28.1
+pytest==8.3.5
