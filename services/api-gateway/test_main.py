@@ -9,7 +9,6 @@ Run locally:
 Run via Makefile (project root):
     make test-unit
 """
-import pytest
 from fastapi.testclient import TestClient
 from main import app
 

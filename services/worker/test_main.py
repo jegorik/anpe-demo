@@ -15,7 +15,7 @@ Run via Makefile (project root):
     make test-unit
 """
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 class TestWorkerMetrics:
@@ -54,7 +54,6 @@ class TestRunFunction:
     def test_run_registers_signal_handlers(self):
         """run() must register SIGTERM and SIGINT handlers before looping."""
         import signal
-        from main import handle_shutdown
 
         with patch("main.start_http_server"), \
              patch("main.time.sleep", side_effect=KeyboardInterrupt), \
