@@ -195,7 +195,7 @@ make test
 |---------------------|-------|------------------------|
 | Unit — api-gateway  | 14    | Python deps only       |
 | Unit — worker       | 7     | Python deps only       |
-| Infrastructure      | 17    | terraform + shellcheck |
+| Infrastructure      | 26    | terraform + shellcheck |
 | Integration         | 12    | Docker Compose         |
 
 See [docs/architecture.md](docs/architecture.md) for infrastructure diagrams and design decisions.

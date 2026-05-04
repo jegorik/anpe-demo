@@ -139,19 +139,16 @@ class TestDockerCompose:
             f"docker-compose.yml has syntax errors:\n{result.stderr}"
         )
 
-    def test_compose_has_prometheus_service(self):
-        """Prometheus service must be declared in docker-compose.yml."""
+    @pytest.mark.parametrize("service", ["prometheus", "grafana"])
+    def test_compose_has_monitoring_service(self, service):
+        """Prometheus and Grafana services must be declared in docker-compose.yml."""
+        import yaml as _yaml
         path = os.path.join(REPO_ROOT, "docker-compose.yml")
         with open(path, encoding="utf-8") as f:
-            content = f.read()
-        assert "prometheus:" in content, "Missing 'prometheus' service in docker-compose.yml"
-
-    def test_compose_has_grafana_service(self):
-        """Grafana service must be declared in docker-compose.yml."""
-        path = os.path.join(REPO_ROOT, "docker-compose.yml")
-        with open(path, encoding="utf-8") as f:
-            content = f.read()
-        assert "grafana:" in content, "Missing 'grafana' service in docker-compose.yml"
+            compose = _yaml.safe_load(f)
+        assert service in compose.get("services", {}), (
+            f"Missing '{service}' service in docker-compose.yml"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -165,21 +162,14 @@ class TestMonitoring:
         path = os.path.join(self.MONITORING_DIR, "prometheus.yml")
         assert os.path.isfile(path), "monitoring/prometheus.yml not found"
 
-    def test_prometheus_config_scrapes_api_gateway(self):
+    @pytest.mark.parametrize("expected_job", ["api-gateway", "worker"])
+    def test_prometheus_config_scrapes_job(self, expected_job):
         import yaml
         path = os.path.join(self.MONITORING_DIR, "prometheus.yml")
         with open(path, encoding="utf-8") as f:
             config = yaml.safe_load(f)
         jobs = [sc["job_name"] for sc in config.get("scrape_configs", [])]
-        assert "api-gateway" in jobs, "Prometheus must scrape 'api-gateway'"
-
-    def test_prometheus_config_scrapes_worker(self):
-        import yaml
-        path = os.path.join(self.MONITORING_DIR, "prometheus.yml")
-        with open(path, encoding="utf-8") as f:
-            config = yaml.safe_load(f)
-        jobs = [sc["job_name"] for sc in config.get("scrape_configs", [])]
-        assert "worker" in jobs, "Prometheus must scrape 'worker'"
+        assert expected_job in jobs, f"Prometheus must scrape '{expected_job}'"
 
     def test_grafana_datasource_provisioning_exists(self):
         path = os.path.join(
