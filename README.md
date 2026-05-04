@@ -51,15 +51,15 @@ Covers the full lifecycle: local development → CI/CD → Kubernetes → AWS pr
 
 ## Progress
 
-| Module | Topic                                       | Status   |
-|--------|---------------------------------------------|----------|
-| 1      | Git workflow & project structure            | ✅ Done  |
-| 2      | Docker: Dockerfiles + Compose + GHCR push   | ✅ Done  |
-| 3      | GitHub Actions CI: lint + build + push      | ✅ Done  |
-| 4      | Kubernetes: k3s manifests + deployment      | ✅ Done  |
-| 5      | CD to k3s via GitHub Actions                | ⏭ Skipped (home firewall blocks inbound SSH from GHA runners) |
-| 6      | Observability: Prometheus + Grafana         | 🔜 Next  |
-| 7      | AWS: ECR + ECS Fargate via Terraform        | ✅ Done  |
+| Module | Topic                                         | Status                                                        |
+|--------|-----------------------------------------------|---------------------------------------------------------------|
+| 1      | Git workflow & project structure              | ✅ Done                                                       |
+| 2      | Docker: Dockerfiles + Compose + GHCR push     | ✅ Done                                                       |
+| 3      | GitHub Actions CI: lint + test + build + push | ✅ Done                                                       |
+| 4      | Kubernetes: k3s manifests + deployment        | ✅ Done                                                       |
+| 5      | CD to k3s via GitHub Actions                  | ⏭ Skipped (home firewall blocks inbound SSH from GHA runners) |
+| 6      | Observability: Prometheus + Grafana           | 🔜 Next                                                       |
+| 7      | AWS: ECR + ECS Fargate via Terraform          | ✅ Done                                                       |
 
 ## Repository Structure
 
@@ -173,12 +173,13 @@ make test
 
 **Test coverage:**
 
-| Suite | Tests | Requires |
-|---|---|---|
-| Unit — api-gateway | 14 | Python deps only |
-| Unit — worker | 7 | Python deps only |
-| Infrastructure | 17 | terraform + shellcheck |
-| Integration | 12 | Docker Compose |  
+| Suite               | Tests | Requires               |
+|---------------------|-------|------------------------|
+| Unit — api-gateway  | 14    | Python deps only       |
+| Unit — worker       | 7     | Python deps only       |
+| Infrastructure      | 17    | terraform + shellcheck |
+| Integration         | 12    | Docker Compose         |
+
 See [docs/architecture.md](docs/architecture.md) for infrastructure diagrams and design decisions.
 
 ## Branch Strategy

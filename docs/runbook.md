@@ -65,12 +65,12 @@ make local-down
 The project has four test suites. All are run through `scripts/run-tests.sh`, which
 writes a timestamped log to `logs/test-<timestamp>.log`.
 
-| Suite | Tests | What it checks | Requires |
-|---|---|---|---|
-| Unit — api-gateway | 14 | FastAPI endpoints via TestClient | Python deps |
-| Unit — worker | 7 | Prometheus counter, signal handlers | Python deps |
-| Infrastructure | 17 | `terraform fmt`, `terraform validate`, shellcheck | terraform + shellcheck |
-| Integration | 12 | Live Docker Compose stack (ports 8080, 9090) | Docker |
+| Suite                | Tests | What it checks                                        | Requires               |
+|----------------------|-------|-------------------------------------------------------|------------------------|
+| Unit — api-gateway   | 14    | FastAPI endpoints via TestClient                      | Python deps            |
+| Unit — worker        | 7     | Prometheus counter, signal handlers                   | Python deps            |
+| Infrastructure       | 17    | `terraform fmt`, `terraform validate`, shellcheck     | terraform + shellcheck |
+| Integration          | 12    | Live Docker Compose stack (ports 8080, 9090)          | Docker                 |
 
 ### Run all suites
 
