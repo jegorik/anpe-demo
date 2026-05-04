@@ -58,7 +58,7 @@ Covers the full lifecycle: local development → CI/CD → Kubernetes → AWS pr
 | 3      | GitHub Actions CI: lint + test + build + push | ✅ Done                                                       |
 | 4      | Kubernetes: k3s manifests + deployment        | ✅ Done                                                       |
 | 5      | CD to k3s via GitHub Actions                  | ⏭ Skipped (home firewall blocks inbound SSH from GHA runners) |
-| 6      | Observability: Prometheus + Grafana           | 🔜 Next                                                       |
+| 6      | Observability: Prometheus + Grafana           | ✅ Done                                                       |
 | 7      | AWS: ECR + ECS Fargate via Terraform          | ✅ Done                                                       |
 
 ## Repository Structure
@@ -96,9 +96,16 @@ anpe-demo/
 │   ├── outputs.tf            # ECR URIs, ALB DNS, cluster name
 │   └── terraform.tfvars.example  # Template — copy and fill before deploying
 ├── tests/
-│   ├── requirements.txt      # httpx + pytest for integration/infra tests
+│   ├── requirements.txt      # httpx + pytest + pyyaml for integration/infra tests
 │   ├── test_integration.py   # 12 integration tests (live Docker Compose)
-│   └── test_infrastructure.py # 17 infra tests (terraform validate, shellcheck)
+│   └── test_infrastructure.py # 26 infra tests (terraform validate, shellcheck, monitoring)
+├── monitoring/
+│   ├── prometheus.yml        # Scrape config (api-gateway :8080, worker :9090)
+│   └── grafana/
+│       ├── provisioning/
+│       │   ├── datasources/prometheus.yml  # Auto-provision Prometheus datasource
+│       │   └── dashboards/dashboard.yml   # Dashboard provider config
+│       └── dashboards/anpe.json           # ANPE Services dashboard
 ├── scripts/
 │   ├── check-prereqs.sh      # Verify aws/terraform/docker/jq + AWS auth
 │   ├── build-push.sh         # ECR login → docker build → push (--dry-run flag)
@@ -127,6 +134,17 @@ make local-up
 curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{"payload": "hello"}'
+```
+
+### Observability (Prometheus + Grafana)
+
+```bash
+make monitoring-up
+# Prometheus → http://localhost:9091
+# Grafana    → http://localhost:3000  (admin / admin)
+# Dashboard  → "ANPE Services" is pre-provisioned automatically
+
+make monitoring-down   # stop + remove volumes
 ```
 
 ### AWS (Terraform + ECS Fargate)

@@ -6,7 +6,7 @@ import time
 TASKS_PROCESSED = Counter("worker_tasks_processed_total", "Tasks processed", ["status"])
 
 
-def handle_shutdown(signum, frame):
+def handle_shutdown(_signum, _frame):
     print("Worker shutting down gracefully...")
     sys.exit(0)
 

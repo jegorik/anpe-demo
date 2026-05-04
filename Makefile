@@ -1,4 +1,4 @@
-.PHONY: help local-up local-down check-prereqs tf-init tf-plan tf-apply tf-destroy build-push deploy destroy \
+.PHONY: help local-up local-down monitoring-up monitoring-down check-prereqs tf-init tf-plan tf-apply tf-destroy build-push deploy destroy \
         test test-unit test-infra test-integration
 
 TERRAFORM_DIR := terraform
@@ -18,6 +18,10 @@ help:
 	@echo "  Local development:"
 	@echo "    make local-up        Build and start services with Docker Compose"
 	@echo "    make local-down      Stop and remove local containers"
+	@echo ""
+	@echo "  Observability:"
+	@echo "    make monitoring-up   Start full stack incl. Prometheus (:9091) + Grafana (:3000)"
+	@echo "    make monitoring-down Stop stack and remove volumes"
 	@echo ""
 	@echo "  AWS deployment:"
 	@echo "    make check-prereqs   Verify required tools and AWS credentials"
@@ -42,6 +46,19 @@ local-up:
 
 local-down:
 	docker compose down
+
+# ── Monitoring ─────────────────────────────────────────────────────────────────
+
+# Start the full stack including Prometheus (:9091) and Grafana (:3000)
+monitoring-up:
+	docker compose up --build -d
+	@echo ""
+	@echo "  Prometheus : http://localhost:9091"
+	@echo "  Grafana    : http://localhost:3000  (admin / admin)"
+	@echo ""
+
+monitoring-down:
+	docker compose down -v
 
 # ── Testing ────────────────────────────────────────────────────────────────────
 
