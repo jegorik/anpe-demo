@@ -15,7 +15,7 @@ def health():
 @app.post("/tasks")
 def create_task(payload: dict):
     REQUEST_COUNT.labels(method="POST", path="/tasks").inc()
-    return {"task_id": "demo-001", "status": "queued"}
+    return {"task_id": "demo-001", "status": "queued", "fields": len(payload)}
 
 
 @app.get("/metrics")

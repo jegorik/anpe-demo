@@ -101,7 +101,7 @@ compose_up() {
   docker compose -f "$REPO_ROOT/docker-compose.yml" up --build -d
   echo ""
   echo "  Waiting for containers to become healthy..."
-  local deadline=$((SECONDS + 60))
+  local deadline=$((SECONDS + 120))
   while [[ $SECONDS -lt $deadline ]]; do
     local healthy
     healthy=$(docker compose -f "$REPO_ROOT/docker-compose.yml" ps --format json \

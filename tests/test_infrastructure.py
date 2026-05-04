@@ -24,7 +24,7 @@ SCRIPTS_DIR = os.path.join(REPO_ROOT, "scripts")
 
 
 def run(cmd: list[str], cwd: str = REPO_ROOT) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
+    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=False)
 
 
 # ---------------------------------------------------------------------------
@@ -60,10 +60,10 @@ class TestTerraformValidate:
         tf_files = glob.glob(os.path.join(TF_DIR, "*.tf"))
         all_refs: set[str] = set()
         for path in tf_files:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 all_refs.update(re.findall(r"var\.([a-z_]+)", f.read()))
 
-        with open(os.path.join(TF_DIR, "variables.tf")) as f:
+        with open(os.path.join(TF_DIR, "variables.tf"), encoding="utf-8") as f:
             declared = set(re.findall(r'variable "([a-z_]+)"', f.read()))
 
         undeclared = all_refs - declared
@@ -88,7 +88,7 @@ class TestTerraformValidate:
         """terraform.tfvars must be covered by .gitignore — never committed."""
         import fnmatch
         gitignore = os.path.join(REPO_ROOT, ".gitignore")
-        with open(gitignore) as f:
+        with open(gitignore, encoding="utf-8") as f:
             lines = [l.strip() for l in f if l.strip() and not l.startswith("#")]
         assert any(fnmatch.fnmatch("terraform.tfvars", pattern) for pattern in lines), (
             "terraform.tfvars must be covered by .gitignore (literal or glob pattern)"
@@ -116,7 +116,7 @@ class TestShellCheck:
     @pytest.mark.parametrize("script", ["check-prereqs.sh", "build-push.sh", "run-tests.sh"])
     def test_script_has_shebang(self, script):
         path = os.path.join(SCRIPTS_DIR, script)
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             first_line = f.readline().strip()
         assert first_line.startswith("#!/"), (
             f"{script} missing shebang line (found: {first_line!r})"
@@ -138,3 +138,65 @@ class TestDockerCompose:
         assert result.returncode == 0, (
             f"docker-compose.yml has syntax errors:\n{result.stderr}"
         )
+
+    @pytest.mark.parametrize("service", ["prometheus", "grafana"])
+    def test_compose_has_monitoring_service(self, service):
+        """Prometheus and Grafana services must be declared in docker-compose.yml."""
+        import yaml as _yaml
+        path = os.path.join(REPO_ROOT, "docker-compose.yml")
+        with open(path, encoding="utf-8") as f:
+            compose = _yaml.safe_load(f)
+        assert service in compose.get("services", {}), (
+            f"Missing '{service}' service in docker-compose.yml"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Monitoring
+# ---------------------------------------------------------------------------
+
+class TestMonitoring:
+    MONITORING_DIR = os.path.join(REPO_ROOT, "monitoring")
+
+    def test_prometheus_config_exists(self):
+        path = os.path.join(self.MONITORING_DIR, "prometheus.yml")
+        assert os.path.isfile(path), "monitoring/prometheus.yml not found"
+
+    @pytest.mark.parametrize("expected_job", ["api-gateway", "worker"])
+    def test_prometheus_config_scrapes_job(self, expected_job):
+        import yaml
+        path = os.path.join(self.MONITORING_DIR, "prometheus.yml")
+        with open(path, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        jobs = [sc["job_name"] for sc in config.get("scrape_configs", [])]
+        assert expected_job in jobs, f"Prometheus must scrape '{expected_job}'"
+
+    def test_grafana_datasource_provisioning_exists(self):
+        path = os.path.join(
+            self.MONITORING_DIR, "grafana", "provisioning", "datasources", "prometheus.yml"
+        )
+        assert os.path.isfile(path), "Grafana datasource provisioning file not found"
+
+    def test_grafana_datasource_points_to_prometheus(self):
+        import yaml
+        path = os.path.join(
+            self.MONITORING_DIR, "grafana", "provisioning", "datasources", "prometheus.yml"
+        )
+        with open(path, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        sources = config.get("datasources", [])
+        assert any(ds.get("type") == "prometheus" for ds in sources), (
+            "Grafana datasource must include a Prometheus datasource"
+        )
+
+    def test_grafana_dashboard_exists(self):
+        path = os.path.join(self.MONITORING_DIR, "grafana", "dashboards", "anpe.json")
+        assert os.path.isfile(path), "Grafana dashboard file monitoring/grafana/dashboards/anpe.json not found"
+
+    def test_grafana_dashboard_is_valid_json(self):
+        import json
+        path = os.path.join(self.MONITORING_DIR, "grafana", "dashboards", "anpe.json")
+        with open(path, encoding="utf-8") as f:
+            dashboard = json.load(f)
+        assert "panels" in dashboard, "Grafana dashboard JSON must contain 'panels'"
+        assert len(dashboard["panels"]) > 0, "Grafana dashboard must have at least one panel"
