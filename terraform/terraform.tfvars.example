@@ -1,0 +1,61 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is excluded from git (.gitignore).
+
+# Project name — used as prefix for all AWS resources
+project_name = "anpe"
+
+# AWS region to deploy into
+aws_region = "eu-central-1"
+
+# VPC CIDR block
+vpc_cidr = "10.0.0.0/16"
+
+# Public subnet CIDRs (must match number of AZs you want)
+public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
+
+# ECS task sizing (Fargate valid combinations: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html)
+api_gateway_cpu    = 256
+api_gateway_memory = 512
+worker_cpu         = 256
+worker_memory      = 512
+
+# Leave image URIs empty on first apply (ECR repos get created).
+# Run `make build-push` after first apply, then optionally set them here.
+api_gateway_image = ""
+worker_image      = ""
+
+# ---------------------------------------------------------------------------
+# Ports — change only if your application listens on different ports
+# ---------------------------------------------------------------------------
+api_gateway_port = 8080
+worker_port      = 9090
+
+# ---------------------------------------------------------------------------
+# Health check paths
+# ---------------------------------------------------------------------------
+api_gateway_health_check_path = "/health"
+worker_health_check_path      = "/metrics"
+
+# ---------------------------------------------------------------------------
+# ECS scaling — increase for production
+# ---------------------------------------------------------------------------
+api_gateway_desired_count = 1
+worker_desired_count      = 1
+
+# ---------------------------------------------------------------------------
+# ECS observability — set to false to reduce CloudWatch costs
+# ---------------------------------------------------------------------------
+enable_container_insights = true
+
+# ---------------------------------------------------------------------------
+# ECR settings
+# ---------------------------------------------------------------------------
+# MUTABLE — overwrites :latest on each push (good for dev/demo)
+# IMMUTABLE — prevents tag overwrites (recommended for production)
+ecr_image_tag_mutability = "MUTABLE"
+
+# Trigger AWS Inspector vulnerability scan on every push
+ecr_scan_on_push = true
+
+# Number of images to keep per ECR repository before expiring old ones
+ecr_image_retention_count = 5

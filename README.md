@@ -1,88 +1,153 @@
 # ANPE Demo — Automated Network Processing Engine
 
-A cloud-native microservices demo platform built to practise real-world Cloud Engineering skills:
-Docker · GitHub Actions CI/CD · Kubernetes (k3s) · Prometheus · Grafana · AWS.
+A cloud-native microservices demo platform built as a practical Cloud Engineer portfolio.  
+Covers the full lifecycle: local development → CI/CD → Kubernetes → AWS production deployment.
 
-> **Purpose:** Internship preparation for a Cloud Engineer role focused on microservices,
-> DevOps automation, and distributed systems.
+> **Stack:** Docker · GitHub Actions · k3s · Terraform · AWS ECS Fargate · ECR · ALB
 
 ---
 
-## Architecture
+## Service Architecture
 
 ```text
-┌─────────────────┐     HTTP/REST       ┌──────────────────┐
-│   api-gateway   │ ──── task req ────▶ │     worker       │
-│                 │                     │                  │
-│  - REST API     │ ◀─── status ─────── │  - task runner   │
-│  - validation   │                     │  - status update │
-│  - /metrics     │                     │  - /metrics      │
-└────────┬────────┘                     └────────┬─────────┘
-         │                                       │
-         └──────────────┬────────────────────────┘
-                        │
-               ┌────────▼────────┐
-               │   task-store    │
-               │ queued→running  │
-               │  →done/failed   │
-               └─────────────────┘
-                        │
-               ┌────────▼────────┐
-               │   Prometheus    │──▶  Grafana dashboards
-               └─────────────────┘
+  Internet
+     │
+     ▼
+┌──────────────────────────────────────┐
+│  Application Load Balancer :80       │  AWS / k3s NodePort :30080
+└──────────────────┬───────────────────┘
+                   │
+                   ▼
+        ┌──────────────────┐
+        │   api-gateway    │  :8080
+        │                  │
+        │  POST /tasks     │──────────────▶ in-memory task store
+        │  GET  /tasks/:id │◀──────────────  (queued → running → done)
+        │  GET  /health    │
+        │  GET  /metrics   │
+        └────────┬─────────┘
+                 │  internal call
+                 ▼
+        ┌──────────────────┐
+        │     worker       │  :9090
+        │                  │
+        │  processes tasks │
+        │  GET /metrics    │◀──── Prometheus scraping (Module 6)
+        └──────────────────┘
 ```
 
 ## Tech Stack
 
-| Layer          | Tool                                  |
-|----------------|---------------------------------------|
-| Containers     | Docker 29, Docker Compose             |
-| CI/CD          | GitHub Actions                        |
-| Orchestration  | k3s v1.31 (self-hosted on Proxmox)    |
-| Packaging      | Helm                                  |
-| Observability  | Prometheus + Grafana                  |
-| Cloud          | AWS ECR + ECS Fargate                 |
-| Source control | Git + GitHub                          |
+| Layer           | Tool                                         |
+|-----------------|----------------------------------------------|
+| Language        | Python 3.13 · FastAPI · uvicorn              |
+| Containers      | Docker 29 · Docker Compose                   |
+| Registry        | GHCR (CI) · AWS ECR (production)             |
+| CI/CD           | GitHub Actions (lint + build + push)         |
+| Orchestration   | k3s v1.31 (self-hosted on Proxmox VM)        |
+| Cloud IaC       | Terraform ~>1.9 · AWS provider ~>6.0         |
+| Cloud runtime   | AWS ECS Fargate · ALB · VPC                  |
+| Observability   | Prometheus · Grafana (Module 6)              |
 
-## Learning Roadmap
+## Progress
 
-- [x] Module 1 — Git workflow & project structure
-- [ ] Module 2 — Docker: Dockerfile, multi-stage builds, Compose
-- [ ] Module 3 — CI/CD: GitHub Actions (build → test → push to GHCR)
-- [ ] Module 4 — Kubernetes: deploy to k3s with Helm
-- [ ] Module 5 — CD: auto-deploy from GitHub Actions to k3s (self-hosted runner)
-- [ ] Module 6 — Observability: Prometheus scraping + Grafana dashboards
-- [ ] Module 7 — AWS: ECR image registry + ECS Fargate deployment
+| Module | Topic                                       | Status   |
+|--------|---------------------------------------------|----------|
+| 1      | Git workflow & project structure            | ✅ Done  |
+| 2      | Docker: Dockerfiles + Compose + GHCR push   | ✅ Done  |
+| 3      | GitHub Actions CI: lint + build + push      | ✅ Done  |
+| 4      | Kubernetes: k3s manifests + deployment      | ✅ Done  |
+| 5      | CD to k3s via GitHub Actions                | ⏭ Skipped (home firewall blocks inbound SSH from GHA runners) |
+| 6      | Observability: Prometheus + Grafana         | 🔜 Next  |
+| 7      | AWS: ECR + ECS Fargate via Terraform        | ✅ Done  |
 
 ## Repository Structure
 
 ```text
 anpe-demo/
 ├── .github/
-│   ├── copilot-instructions.md   # AI agent context and rules
-│   └── workflows/                # GitHub Actions pipelines
+│   └── workflows/
+│       └── ci.yml            # Lint → build → push to GHCR on every push to main
 ├── services/
-│   ├── api-gateway/              # REST API service
-│   └── worker/                   # Task processing service
-├── helm/                         # Helm chart (added in Module 4)
-├── monitoring/                   # Prometheus + Grafana configs (Module 6)
-└── docs/                         # Architecture decisions and runbooks
+│   ├── api-gateway/          # FastAPI REST service (port 8080)
+│   │   ├── Dockerfile
+│   │   ├── main.py
+│   │   └── requirements.txt
+│   └── worker/               # Background task processor (port 9090)
+│       ├── Dockerfile
+│       ├── main.py
+│       └── requirements.txt
+├── k8s/
+│   ├── namespace.yml         # Namespace: anpe
+│   ├── api-gateway.yml       # Deployment + NodePort :30080
+│   └── worker.yml            # Deployment + ClusterIP :9090
+├── terraform/
+│   ├── terraform.tf          # Provider versions
+│   ├── provider.tf           # AWS provider + data sources
+│   ├── variables.tf          # Input variables
+│   ├── vpc.tf                # VPC, subnets, IGW, route table
+│   ├── security_groups.tf    # ALB SG + ECS SG (separate rule resources)
+│   ├── main.tf               # ECR repositories + lifecycle policies
+│   ├── iam.tf                # ECS Task Execution Role
+│   ├── alb.tf                # ALB + target group + HTTP listener
+│   ├── ecs.tf                # ECS cluster + task definitions + services
+│   ├── outputs.tf            # ECR URIs, ALB DNS, cluster name
+│   └── terraform.tfvars.example  # Template — copy and fill before deploying
+├── scripts/
+│   ├── check-prereqs.sh      # Verify aws/terraform/docker/jq + AWS auth
+│   └── build-push.sh         # ECR login → docker build → push (--dry-run flag)
+├── docs/
+│   ├── architecture.md       # AWS infrastructure diagram + design decisions
+│   └── runbook.md            # Step-by-step deploy and teardown guide
+├── docker-compose.yml        # Local multi-service orchestration
+└── Makefile                  # Developer shortcuts (see `make help`)
 ```
 
-## Getting Started
+## Quick Start
+
+### Local (Docker Compose)
 
 ```bash
-# Clone the repo
-git clone https://github.com/jegorik/anpe-demo.git
+git clone https://github.com/<your-username>/anpe-demo.git
 cd anpe-demo
 
-# Run locally with Docker Compose (available after Module 2)
-docker compose up --build
+make local-up
+# api-gateway → http://localhost:8080/health
+# worker      → http://localhost:9090/metrics
+
+# Submit a task
+curl -X POST http://localhost:8080/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"payload": "hello"}'
 ```
 
-## Contributing / Branch Strategy
+### AWS (Terraform + ECS Fargate)
 
-This project uses trunk-based development with short-lived feature branches.
+```bash
+# 1. Prerequisites
+make check-prereqs
+
+# 2. Configure
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars
+# edit terraform/terraform.tfvars — set aws_region, project_name, etc.
+
+# 3. Preview infrastructure (~15 resources)
+make tf-plan
+
+# 4. Deploy (creates VPC, ALB, ECR, ECS cluster, IAM)
+make deploy
+
+# 5. Verify
+curl http://$(terraform -chdir=terraform output -raw alb_dns_name)/health
+
+# 6. Tear down (avoid ongoing AWS costs)
+make destroy
+```
+
+See [docs/runbook.md](docs/runbook.md) for a detailed step-by-step guide and troubleshooting.  
+See [docs/architecture.md](docs/architecture.md) for infrastructure diagrams and design decisions.
+
+## Branch Strategy
 
 ```text
 main          ← protected, deployable at all times

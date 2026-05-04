@@ -11,7 +11,7 @@ permissions:
   packages: write
 
 jobs:
-  lint:
+  lint-python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,8 +26,117 @@ jobs:
       - name: Lint services
         run: flake8 services/ --max-line-length=100
 
+  test-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install api-gateway deps
+        run: pip install -r services/api-gateway/requirements.txt
+
+      - name: Unit tests — api-gateway
+        run: |
+          python -m pytest services/api-gateway/test_main.py \
+            -v --tb=short \
+            --junit-xml=reports/unit-api-gateway.xml
+
+      - name: Install worker deps
+        run: pip install -r services/worker/requirements.txt
+
+      - name: Unit tests — worker
+        run: |
+          python -m pytest services/worker/test_main.py \
+            -v --tb=short \
+            --junit-xml=reports/unit-worker.xml
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: reports/
+
+  test-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~1.9'
+
+      - name: Install test deps
+        run: pip install -r tests/requirements.txt
+
+      - name: Infrastructure tests
+        run: |
+          python -m pytest tests/test_infrastructure.py \
+            -v --tb=short \
+            --junit-xml=reports/infra.xml
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-test-reports
+          path: reports/
+
+  lint-terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~1.9'
+
+      - name: Terraform format check
+        run: terraform fmt -check -recursive terraform/
+
+      # init with -backend=false skips remote state — no AWS credentials needed.
+      # Enough for validate to resolve all variable references and resource types.
+      - name: Terraform init (no backend)
+        run: terraform -chdir=terraform init -backend=false
+
+      - name: Terraform validate
+        run: terraform -chdir=terraform validate
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: latest
+
+      - name: TFLint init
+        run: tflint --init
+        working-directory: terraform
+
+      - name: TFLint
+        run: tflint --format compact
+        working-directory: terraform
+
+  lint-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck
+        uses: ludeeus/action-shellcheck@2.0.0
+        with:
+          scandir: './scripts'
+          severity: warning
+
   build-push:
-    needs: lint
+    needs: [lint-python, test-unit, test-infra, lint-terraform, lint-shell]
     runs-on: ubuntu-latest
     strategy:
       matrix:
