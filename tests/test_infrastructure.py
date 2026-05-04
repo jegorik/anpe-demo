@@ -85,12 +85,13 @@ class TestTerraformValidate:
         assert os.path.isfile(path), "terraform.tfvars.example is missing"
 
     def test_tfvars_not_committed(self):
-        """terraform.tfvars must be in .gitignore — never committed."""
+        """terraform.tfvars must be covered by .gitignore — never committed."""
+        import fnmatch
         gitignore = os.path.join(REPO_ROOT, ".gitignore")
         with open(gitignore) as f:
-            content = f.read()
-        assert "terraform.tfvars" in content, (
-            "terraform.tfvars must be listed in .gitignore"
+            lines = [l.strip() for l in f if l.strip() and not l.startswith("#")]
+        assert any(fnmatch.fnmatch("terraform.tfvars", pattern) for pattern in lines), (
+            "terraform.tfvars must be covered by .gitignore (literal or glob pattern)"
         )
 
 

@@ -8,6 +8,9 @@ resource "aws_lb" "main" {
   security_groups    = [aws_security_group.alb.id]
   subnets            = aws_subnet.public[*].id
 
+  # Prevent HTTP header injection / request smuggling attacks
+  drop_invalid_header_fields = true
+
   tags = {
     Project = var.project_name
   }

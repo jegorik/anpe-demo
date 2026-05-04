@@ -60,7 +60,7 @@ make local-down
 
 ---
 
-## 3. Testing
+## 2. Testing
 
 The project has four test suites. All are run through `scripts/run-tests.sh`, which
 writes a timestamped log to `logs/test-<timestamp>.log`.
@@ -95,6 +95,10 @@ python3 -m venv .venv
 .venv/bin/pip install -r services/worker/requirements.txt
 .venv/bin/pip install -r tests/requirements.txt
 ```
+
+---
+
+## 3. AWS Deployment (ECS Fargate)
 
 ### Prerequisites
 
@@ -281,9 +285,11 @@ Approximate teardown time: **3–5 minutes**.
 The target group has no healthy targets. Check:
 
 ```bash
-# Target group health
-aws elbv2 describe-target-health \
-  --target-group-arn $(terraform -chdir=terraform output -json | jq -r '.alb_dns_name // empty')
+# Target group health — look up the target group ARN first
+TG_ARN=$(aws elbv2 describe-target-groups \
+  --query 'TargetGroups[?contains(TargetGroupName, `anpe`)].TargetGroupArn' \
+  --output text)
+aws elbv2 describe-target-health --target-group-arn "$TG_ARN"
 ```
 
 Most likely the ECS task is still starting (allow 1–2 min) or the health check

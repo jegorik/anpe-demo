@@ -13,7 +13,13 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 step()  { echo -e "\n${CYAN}==>${NC} $*"; }
-ok()    { echo -e "${GREEN}  ✓${NC} $*"; }
+ok()    {
+  if [[ "${DRY_RUN:-false}" == true ]]; then
+    echo -e "${YELLOW}  (skipped)${NC} $*"
+  else
+    echo -e "${GREEN}  ✓${NC} $*"
+  fi
+}
 fail()  { echo -e "${RED}  ✗${NC} $*"; exit 1; }
 warn()  { echo -e "${YELLOW}  !${NC} $*"; }
 

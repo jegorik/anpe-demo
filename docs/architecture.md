@@ -56,6 +56,11 @@ Supporting services (not in diagram):
   - IAM Role         → ecs-task-execution (ECR pull + CW write)
 ```
 
+> **Note:** The AZ names in the diagram (`eu-central-1a`/`eu-central-1b`) reflect the default
+> `aws_region = "eu-central-1"`. Terraform resolves AZs dynamically via
+> `data.aws_availability_zones.available`, so any region works — the first two available AZs
+> are selected automatically.
+
 ## Resource Inventory
 
 | Terraform Resource | AWS Resource | Purpose |
