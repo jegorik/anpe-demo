@@ -5,9 +5,10 @@
 This runbook covers:
 
 1. [Local development](#1-local-development-docker-compose)
-2. [AWS deployment](#2-aws-deployment-ecs-fargate)
-3. [Teardown](#3-teardown)
-4. [Troubleshooting](#4-troubleshooting)
+2. [Testing](#2-testing)
+3. [AWS deployment](#3-aws-deployment-ecs-fargate)
+4. [Teardown](#4-teardown)
+5. [Troubleshooting](#5-troubleshooting)
 
 ---
 
@@ -40,13 +41,14 @@ Services will be available at:
 curl -X POST http://localhost:8080/tasks \
   -H "Content-Type: application/json" \
   -d '{"payload": "process-this"}'
-# → {"task_id": "...", "status": "queued"}
+# → {"task_id": "demo-001", "status": "queued"}
 
-# Check task status
-curl http://localhost:8080/tasks/<task_id>
+# Health check
+curl http://localhost:8080/health
+# → {"status": "ok", "service": "api-gateway"}
 
-# List all tasks
-curl http://localhost:8080/tasks
+# Prometheus metrics
+curl http://localhost:8080/metrics
 ```
 
 ### Stop services
@@ -58,7 +60,41 @@ make local-down
 
 ---
 
-## 2. AWS Deployment (ECS Fargate)
+## 3. Testing
+
+The project has four test suites. All are run through `scripts/run-tests.sh`, which
+writes a timestamped log to `logs/test-<timestamp>.log`.
+
+| Suite | Tests | What it checks | Requires |
+|---|---|---|---|
+| Unit — api-gateway | 14 | FastAPI endpoints via TestClient | Python deps |
+| Unit — worker | 7 | Prometheus counter, signal handlers | Python deps |
+| Infrastructure | 17 | `terraform fmt`, `terraform validate`, shellcheck | terraform + shellcheck |
+| Integration | 12 | Live Docker Compose stack (ports 8080, 9090) | Docker |
+
+### Run all suites
+
+```bash
+make test
+# or: ./scripts/run-tests.sh
+```
+
+### Run individual suites
+
+```bash
+make test-unit          # unit tests only (no Docker needed)
+make test-infra         # terraform validate + shellcheck (no AWS needed)
+make test-integration   # starts Docker Compose, runs tests, stops compose
+```
+
+### Install Python dependencies first
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r services/api-gateway/requirements.txt
+.venv/bin/pip install -r services/worker/requirements.txt
+.venv/bin/pip install -r tests/requirements.txt
+```
 
 ### Prerequisites
 
@@ -197,7 +233,7 @@ aws ecr describe-images \
 
 ---
 
-## 3. Teardown
+## 4. Teardown
 
 ```bash
 make destroy
@@ -212,7 +248,7 @@ Approximate teardown time: **3–5 minutes**.
 
 ---
 
-## 4. Troubleshooting
+## 5. Troubleshooting
 
 ### ECS service stuck in PENDING
 
